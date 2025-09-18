@@ -1,0 +1,75 @@
+export default {
+  expo: {
+    name: 'CarouselCraft',
+    slug: 'carousel-craft',
+    version: '1.0.0',
+    orientation: 'portrait',
+    icon: './assets/images/icon.png',
+    scheme: 'carouselcraft',
+    userInterfaceStyle: 'automatic',
+    newArchEnabled: true,
+    ios: {
+      supportsTablet: true,
+      infoPlist: {
+        NSPhotoLibraryUsageDescription: 'This app needs access to your photo library to select images for carousel creation.',
+        NSCameraUsageDescription: 'This app needs access to your camera to take photos for carousel creation.',
+      },
+    },
+    android: {
+      adaptiveIcon: {
+        backgroundColor: '#007AFF',
+        foregroundImage: './assets/images/android-icon-foreground.png',
+        backgroundImage: './assets/images/android-icon-background.png',
+        monochromeImage: './assets/images/android-icon-monochrome.png',
+      },
+      edgeToEdgeEnabled: true,
+      predictiveBackGestureEnabled: false,
+      permissions: [
+        'READ_EXTERNAL_STORAGE',
+        'READ_MEDIA_IMAGES',
+        'WRITE_EXTERNAL_STORAGE',
+      ],
+    },
+    web: {
+      output: 'static',
+      favicon: './assets/images/favicon.png',
+    },
+    plugins: [
+      'expo-router',
+      [
+        'expo-splash-screen',
+        {
+          image: './assets/images/splash-icon.png',
+          imageWidth: 200,
+          resizeMode: 'contain',
+          backgroundColor: '#ffffff',
+          dark: {
+            backgroundColor: '#000000',
+          },
+        },
+      ],
+      [
+        'expo-image-picker',
+        {
+          photosPermission: 'The app accesses your photos to let you select images for carousel creation.',
+          cameraPermission: 'The app accesses your camera to let you take photos for carousel creation.',
+        },
+      ],
+      [
+        'expo-media-library',
+        {
+          photosPermission: 'Allow $(PRODUCT_NAME) to access your photos to save carousel images.',
+          savePhotosPermission: 'Allow $(PRODUCT_NAME) to save photos to your photo library.',
+          isAccessMediaLocationEnabled: true,
+        },
+      ],
+    ],
+    experiments: {
+      typedRoutes: true,
+      reactCompiler: true,
+    },
+    extra: {
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY || 'your-openai-api-key-here',
+    },
+  },
+};
