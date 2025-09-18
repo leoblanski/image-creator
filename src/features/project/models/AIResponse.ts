@@ -27,14 +27,32 @@ export const validateAIResponse = (response: any): response is AIResponse => {
 };
 
 export const createFallbackResponse = (slidesCount: number): AIResponse => {
-  const slides = Array.from({ length: slidesCount }, (_, index) => ({
-    index: index + 1,
-    title: `Slide ${index + 1}`,
-    body: index === 0 ? 'Engaging content goes here' : undefined,
-  }));
+  const tipsCount = slidesCount - 2; // Minus hook and CTA
+  const slides = Array.from({ length: slidesCount }, (_, index) => {
+    if (index === 0) {
+      return {
+        index: index + 1,
+        title: `${tipsCount} dicas para sucesso`,
+        body: 'Conteúdo interessante aqui',
+      };
+    } else if (index === slidesCount - 1) {
+      return {
+        index: index + 1,
+        title: 'Siga para mais dicas',
+        body: undefined,
+      };
+    } else {
+      const tipNumber = index;
+      return {
+        index: index + 1,
+        title: `Dica ${tipNumber}`,
+        body: `Conteúdo da dica ${tipNumber}`,
+      };
+    }
+  });
 
   return {
     slides,
-    cta: 'Follow for more content',
+    cta: 'Siga para mais dicas',
   };
 };

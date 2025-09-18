@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { PresetId } from '../../core/presets';
+import { TrendingTopic } from './trendingService';
 
 export interface WizardStep {
   id: string;
@@ -10,6 +11,7 @@ export interface WizardStep {
 export interface WizardData {
   selectedImages: string[];
   category: string;
+  selectedTopic: TrendingTopic | null;
   goal: string;
   audience: string;
   language: 'pt-BR' | 'en-US';
@@ -34,20 +36,22 @@ interface WizardStore {
   markStepCompleted: (stepIndex: number) => void;
   resetWizard: () => void;
   canProceed: () => boolean;
+  initializeSteps: (t: (key: string) => string) => void;
 }
 
-const initialSteps: WizardStep[] = [
-  { id: 'images', title: 'Select Images', completed: false },
-  { id: 'content', title: 'Content & Goal', completed: false },
-  { id: 'style', title: 'Tone & Style', completed: false },
-  { id: 'points', title: 'Key Points', completed: false },
-  { id: 'cta', title: 'CTA & Hashtags', completed: false },
+const getInitialSteps = (t: (key: string) => string): WizardStep[] => [
+  { id: 'category', title: t('wizard.steps.category'), completed: false },
+  { id: 'topics', title: t('wizard.steps.topics'), completed: false },
+  { id: 'images', title: t('wizard.steps.images'), completed: false },
+  { id: 'style', title: t('wizard.steps.style'), completed: false },
+  { id: 'cta', title: t('wizard.steps.cta'), completed: false },
 ];
 
 const initialData: WizardData = {
   selectedImages: [],
   category: '',
-  goal: '',
+  selectedTopic: null,
+  goal: 'Education',
   audience: '',
   language: 'en-US',
   tone: '',
@@ -59,7 +63,7 @@ const initialData: WizardData = {
 
 export const useWizardStore = create<WizardStore>((set, get) => ({
   currentStep: 0,
-  steps: initialSteps,
+  steps: [],
   data: initialData,
   isCompleted: false,
 
@@ -97,24 +101,28 @@ export const useWizardStore = create<WizardStore>((set, get) => ({
   resetWizard: () => {
     set({
       currentStep: 0,
-      steps: initialSteps,
+      steps: [],
       data: initialData,
       isCompleted: false,
     });
+  },
+
+  initializeSteps: (t) => {
+    set({ steps: getInitialSteps(t) });
   },
 
   canProceed: () => {
     const { currentStep, data } = get();
     
     switch (currentStep) {
-      case 0: // Images
+      case 0: // Category
+        return data.category.length > 0;
+      case 1: // Trending Topics
+        return data.selectedTopic !== null;
+      case 2: // Images
         return data.selectedImages.length >= 2;
-      case 1: // Content & Goal
-        return data.category.length > 0 && data.goal.length > 0 && data.audience.length > 0;
-      case 2: // Tone & Style
+      case 3: // Tone & Style
         return data.tone.length > 0;
-      case 3: // Key Points
-        return data.keyPoints.length > 0;
       case 4: // CTA & Hashtags
         return true; // Optional step
       default:

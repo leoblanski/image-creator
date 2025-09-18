@@ -73,6 +73,7 @@ export default function PreviewScreen() {
         slides={currentProject.slides}
         onSlideUpdate={handleSlideUpdate}
         showSafeArea={showSafeArea}
+        language={currentProject.language}
       />
 
       <View style={styles.footer}>

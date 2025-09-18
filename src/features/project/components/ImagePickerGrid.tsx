@@ -1,17 +1,17 @@
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
 import {
-    Alert,
-    FlatList,
-    Image,
-    PermissionsAndroid,
-    Platform,
-    StyleSheet,
-    Text,
-    View
+  Alert,
+  FlatList,
+  Image,
+  PermissionsAndroid,
+  Platform,
+  StyleSheet,
+  Text,
+  View
 } from 'react-native';
 import { MAX_SLIDES, MIN_SLIDES } from '../../../core/sizes';
-import { borderRadius, colors, spacing, typography } from '../../../core/theme';
+import { colors, spacing, typography } from '../../../core/theme';
 import { Button } from '../../../shared/ui/Button';
 import { Card } from '../../../shared/ui/Card';
 
@@ -58,7 +58,7 @@ export const ImagePickerGrid: React.FC<ImagePickerGridProps> = ({
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: 'images',
         allowsMultipleSelection: true,
         quality: 0.8,
         selectionLimit: maxImages - selectedImages.length,
@@ -66,7 +66,9 @@ export const ImagePickerGrid: React.FC<ImagePickerGridProps> = ({
 
       if (!result.canceled) {
         const newImages = result.assets.map(asset => asset.uri);
+        console.log('Picked images:', newImages);
         const updatedImages = [...selectedImages, ...newImages].slice(0, maxImages);
+        console.log('Updated images list:', updatedImages);
         onImagesChange(updatedImages);
       }
     } catch (error) {
@@ -148,50 +150,54 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
   },
   title: {
-    fontSize: typography.sizes.xl,
+    fontSize: typography.sizes.xxl,
     fontWeight: typography.weights.bold,
     color: colors.light.text,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   subtitle: {
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.md,
     color: colors.light.textSecondary,
   },
   grid: {
-    paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
   },
   row: {
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   imageCard: {
     width: '48%',
     aspectRatio: 1,
     padding: 0,
     overflow: 'hidden',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: colors.light.border,
   },
   image: {
     width: '100%',
     height: '100%',
-    borderRadius: borderRadius.lg,
   },
   removeButton: {
     position: 'absolute',
-    top: spacing.xs,
-    right: spacing.xs,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    top: spacing.sm,
+    right: spacing.sm,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   removeButtonText: {
     color: colors.light.text,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: typography.weights.bold,
   },
   addCard: {
@@ -199,8 +205,9 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderStyle: 'dashed',
     borderWidth: 2,
-    borderColor: colors.light.border,
+    borderColor: colors.light.primary,
     backgroundColor: colors.light.surface,
+    borderRadius: 16,
   },
   addContent: {
     flex: 1,
@@ -208,24 +215,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addIcon: {
-    fontSize: 32,
-    color: colors.light.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  addText: {
-    fontSize: typography.sizes.sm,
-    color: colors.light.textSecondary,
-    fontWeight: typography.weights.medium,
-  },
-  footer: {
-    marginTop: spacing.lg,
-  },
-  pickButton: {
+    fontSize: 36,
+    color: colors.light.primary,
     marginBottom: spacing.sm,
   },
+  addText: {
+    fontSize: typography.sizes.md,
+    color: colors.light.primary,
+    fontWeight: typography.weights.semibold,
+  },
+  footer: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+  },
+  pickButton: {
+    marginBottom: spacing.md,
+  },
   warningText: {
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.md,
     color: colors.light.error,
     textAlign: 'center',
+    fontWeight: typography.weights.medium,
   },
 });

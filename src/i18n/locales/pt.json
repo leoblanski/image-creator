@@ -1,0 +1,70 @@
+{
+  "appName": "CarouselCraft",
+  "appTagline": "Crie carrosséis impressionantes para o Instagram com IA",
+  "newProject": "Novo Projeto",
+  "project": "Projeto",
+  "slide": "slide",
+  "slides": "slides",
+  "noProjects": "Nenhum projeto ainda",
+  "createYourFirstProject": "Crie seu primeiro projeto para começar",
+  "recentProjects": "Projetos Recentes",
+  "seeAll": "Ver todos",
+  "features": "Recursos",
+  "aiPowered": "IA Poderosa",
+  "aiPoweredDesc": "Gere títulos e descrições envolventes usando IA",
+  "templates": "Modelos",
+  "templatesDesc": "Escolha entre modelos profissionais",
+  "quickExport": "Exportação Rápida",
+  "quickExportDesc": "Compartilhe diretamente ou salve no seu dispositivo",
+  
+  "wizard": {
+    "steps": {
+      "category": "Categoria",
+      "topics": "Tópicos em Alta",
+      "images": "Selecionar Imagens",
+      "style": "Tom e Estilo",
+      "cta": "CTA e Hashtags"
+    },
+    "category": {
+      "title": "Escolha uma categoria",
+      "language": "Idioma"
+    },
+    "topics": {
+      "title": "Tópicos Como Fazer",
+      "placeholder": "Filtrar tópicos...",
+      "loading": "Encontrando tópicos relevantes...",
+      "loadingSubtext": "Isso pode levar alguns segundos",
+      "error": "Erro ao carregar tópicos",
+      "retry": "Tentar novamente",
+      "empty": "Nenhum tópico encontrado",
+      "emptyDescription": "Tente selecionar outra categoria"
+    },
+    "style": {
+      "tone": "Qual tom?",
+      "style": "Estilo"
+    },
+    "cta": {
+      "title": "Call to Action (Opcional)",
+      "placeholder": "ex: Siga para mais dicas",
+      "hashtags": "Hashtags (Opcional)"
+    },
+    "buttons": {
+      "previous": "Anterior",
+      "next": "Próximo",
+      "generate": "Gerar & Criar",
+      "generating": "Gerando..."
+    },
+    "titles": {
+      "tipsCount": "{{count}} dicas sobre {{topic}}",
+      "tipsCountFallback": "{{count}} dicas para {{category}}",
+      "followForMore": "Siga para mais dicas"
+    }
+  },
+  "common": {
+    "loading": "Carregando...",
+    "error": "Erro",
+    "retry": "Tentar novamente",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar"
+  }
+}

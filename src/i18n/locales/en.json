@@ -1,0 +1,70 @@
+{
+  "appName": "CarouselCraft",
+  "appTagline": "Create stunning Instagram carousels with AI",
+  "newProject": "New Project",
+  "project": "Project",
+  "slide": "slide",
+  "slides": "slides",
+  "noProjects": "No projects yet",
+  "createYourFirstProject": "Create your first project to get started",
+  "recentProjects": "Recent Projects",
+  "seeAll": "See all",
+  "features": "Features",
+  "aiPowered": "AI-Powered",
+  "aiPoweredDesc": "Generate engaging titles and descriptions using AI",
+  "templates": "Templates",
+  "templatesDesc": "Choose from professional templates",
+  "quickExport": "Quick Export",
+  "quickExportDesc": "Share directly or save to your device",
+  
+  "wizard": {
+    "steps": {
+      "category": "Category",
+      "topics": "Trending Topics",
+      "images": "Select Images",
+      "style": "Tone & Style",
+      "cta": "CTA & Hashtags"
+    },
+    "category": {
+      "title": "Choose a category",
+      "language": "Language"
+    },
+    "topics": {
+      "title": "How-To Topics",
+      "placeholder": "Filter topics...",
+      "loading": "Finding relevant how-to topics...",
+      "loadingSubtext": "This may take a few seconds",
+      "error": "Error loading topics",
+      "retry": "Try again",
+      "empty": "No topics found",
+      "emptyDescription": "Try selecting another category"
+    },
+    "style": {
+      "tone": "What tone?",
+      "style": "Style"
+    },
+    "cta": {
+      "title": "Call to Action (Optional)",
+      "placeholder": "e.g., Follow for more tips",
+      "hashtags": "Hashtags (Optional)"
+    },
+    "buttons": {
+      "previous": "Previous",
+      "next": "Next",
+      "generate": "Generate & Create",
+      "generating": "Generating..."
+    },
+    "titles": {
+      "tipsCount": "{{count}} tips about {{topic}}",
+      "tipsCountFallback": "{{count}} tips for {{category}}",
+      "followForMore": "Follow for more tips"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Try again",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  }
+}

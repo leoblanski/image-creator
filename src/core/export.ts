@@ -1,4 +1,6 @@
-import { copyAsync, documentDirectory, getInfoAsync, makeDirectoryAsync } from 'expo-file-system';
+import { Directory } from 'expo-file-system';
+import { copyAsync, makeDirectoryAsync } from 'expo-file-system/legacy';
+import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 
@@ -8,15 +10,16 @@ export const generateFilename = (projectId: string, slideIndex: number): string 
 };
 
 export const getExportDirectory = (): string => {
-  return `${documentDirectory}CarouselCraft/`;
+  // Use cache directory for temporary files
+  return 'CarouselCraft/';
 };
 
 export const ensureExportDirectory = async (): Promise<void> => {
-  const dir = getExportDirectory();
-  const dirInfo = await getInfoAsync(dir);
+  const dirPath = getExportDirectory();
+  const directory = new Directory(dirPath);
   
-  if (!dirInfo.exists) {
-    await makeDirectoryAsync(dir, { intermediates: true });
+  if (!directory.exists) {
+    await makeDirectoryAsync(dirPath, { intermediates: true });
   }
 };
 
@@ -24,14 +27,28 @@ export const saveSlideImage = async (
   imageUri: string,
   filename: string
 ): Promise<string> => {
+  try {
+    const { status } = await MediaLibrary.requestPermissionsAsync();
+    if (status === 'granted') {
+      const asset = await MediaLibrary.createAssetAsync(imageUri);
+      // Try to create/find album
+      const albumName = 'CarouselCraft';
+      let album = await MediaLibrary.getAlbumAsync(albumName);
+      if (!album) {
+        album = await MediaLibrary.createAlbumAsync(albumName, asset, false);
+      } else {
+        await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+      }
+      return asset.uri ?? imageUri;
+    }
+  } catch (error) {
+    // Fallback to internal directory if media library fails
+    console.warn('MediaLibrary save failed, falling back to internal storage', error);
+  }
+
   await ensureExportDirectory();
   const destination = `${getExportDirectory()}${filename}`;
-  
-  await copyAsync({
-    from: imageUri,
-    to: destination,
-  });
-  
+  await copyAsync({ from: imageUri, to: destination });
   return destination;
 };
 
@@ -45,10 +62,20 @@ export const shareImage = async (imageUri: string): Promise<void> => {
 };
 
 export const shareMultipleImages = async (imageUris: string[]): Promise<void> => {
-  // For multiple images, we'll share them one by one
-  // In a production app, you might want to create a zip file
-  for (const uri of imageUris) {
-    await shareImage(uri);
+  try {
+    // Share images one by one with proper error handling
+    for (const uri of imageUris) {
+      try {
+        await shareImage(uri);
+        // Small delay to prevent overwhelming the share sheet
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (individualError) {
+        console.error('Failed to share individual image:', uri, individualError);
+        // Continue with next image instead of stopping
+      }
+    }
+  } catch (error) {
+    console.warn('Bulk sharing failed:', error);
   }
 };
 

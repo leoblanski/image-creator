@@ -21,7 +21,7 @@ interface TextOverlayEditorProps {
   onTitleChange: (title: string) => void;
   onBodyChange: (body: string) => void;
   onStyleChange: (styleId: PresetId) => void;
-  onSave: () => void;
+  onSave: (title: string, body: string, styleId: PresetId) => void;
   onCancel: () => void;
 }
 
@@ -51,10 +51,7 @@ export const TextOverlayEditor: React.FC<TextOverlayEditorProps> = ({
       return;
     }
 
-    onTitleChange(localTitle);
-    onBodyChange(localBody);
-    onStyleChange(localStyleId);
-    onSave();
+    onSave(localTitle, localBody, localStyleId);
   };
 
   const presets = getAllPresets();
@@ -67,7 +64,7 @@ export const TextOverlayEditor: React.FC<TextOverlayEditorProps> = ({
     <View style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>Text Content</Text>
+          <Text style={styles.sectionTitle}>Slide Title</Text>
           
           <View style={styles.inputGroup}>
             <Text style={styles.label}>
@@ -85,16 +82,16 @@ export const TextOverlayEditor: React.FC<TextOverlayEditorProps> = ({
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>
-              Body {localBody.length > 0 && `(${localBody.length}/${BODY_MAX_LENGTH})`}
+              Description (for post caption) {localBody.length > 0 && `(${localBody.length}/${BODY_MAX_LENGTH})`}
             </Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={localBody}
               onChangeText={setLocalBody}
-              placeholder="Enter slide description (optional)..."
+              placeholder="Enter description for Instagram post caption..."
               maxLength={BODY_MAX_LENGTH}
               multiline
-              numberOfLines={3}
+              numberOfLines={4}
             />
           </View>
         </Card>

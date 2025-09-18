@@ -2,43 +2,34 @@ import { PresetId, getAllPresets } from '@src/core/presets';
 import { colors, spacing, typography } from '@src/core/theme';
 import { useAIStore } from '@src/features/project/aiStore';
 import { ImagePickerGrid } from '@src/features/project/components/ImagePickerGrid';
-import { WizardStepper } from '@src/features/project/components/WizardStepper';
+import { TrendingTopicsSelector } from '@src/features/project/components/TrendingTopicsSelector';
 import { createAIRequest } from '@src/features/project/models/AIRequest';
 import { createSlide } from '@src/features/project/models/Slide';
 import { generateCarousel } from '@src/features/project/openai';
 import { useProjectStore } from '@src/features/project/store';
 import { useWizardStore } from '@src/features/project/wizardStore';
-import { Button } from '@src/shared/ui/Button';
-import { Card } from '@src/shared/ui/Card';
+import { useTranslation } from '@src/hooks/useTranslation';
 import { Segmented } from '@src/shared/ui/Segmented';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 
 const categories = [
-  { label: 'Technology', value: 'Technology' },
-  { label: 'Business', value: 'Business' },
-  { label: 'Education', value: 'Education' },
-  { label: 'Lifestyle', value: 'Lifestyle' },
-  { label: 'Health', value: 'Health' },
-  { label: 'Entertainment', value: 'Entertainment' },
+  { label: '🚀 Carreira em TI', value: '🚀 Carreira em TI' },
+  { label: '💻 Tecnologias em Alta', value: '💻 Tecnologias em Alta' },
+  { label: '🌎 Trabalho Remoto', value: '🌎 Trabalho Remoto' },
+  { label: '📚 Aprendizado', value: '📚 Aprendizado' },
+  { label: '💡 Dicas Rápidas', value: '💡 Dicas Rápidas' },
 ];
 
-const goals = [
-  { label: 'Education', value: 'Education' },
-  { label: 'CTA', value: 'CTA' },
-  { label: 'Awareness', value: 'Awareness' },
-  { label: 'Engagement', value: 'Engagement' },
-  { label: 'Sales', value: 'Sales' },
-];
 
 const tones = [
   { label: 'Casual', value: 'Casual' },
@@ -54,29 +45,33 @@ const languages = [
 ];
 
 export default function WizardScreen() {
-  const {
-    currentStep,
-    steps,
-    data,
-    setCurrentStep,
-    nextStep,
-    previousStep,
-    updateStepData,
-    markStepCompleted,
-    canProceed,
-  } = useWizardStore();
+  const { t, changeLanguage, appLanguage } = useTranslation();
 
+  const { currentStep, steps, nextStep, previousStep, updateStepData, data } = useWizardStore();
   const { createNewProject } = useProjectStore();
-  const { setLoading, setError, setResponse } = useAIStore();
+  const { setLoading, setError, setResponse, isLoading: aiLoading } = useAIStore();
 
-  const [keyPointText, setKeyPointText] = useState('');
+  // Initialize steps with translations
+  const { initializeSteps } = useWizardStore();
+  
+  // Initialize steps when the component mounts or when the translation changes
+  useEffect(() => {
+    initializeSteps(t);
+  }, [t, initializeSteps]);
+
+  // Sync language changes
+  useEffect(() => {
+    if (data.language !== appLanguage) {
+      const newLanguage = data.language === 'pt-BR' ? 'pt' : 'en';
+      changeLanguage(newLanguage);
+    }
+  }, [data.language, appLanguage, changeLanguage]);
 
   const handleNext = async () => {
     if (currentStep === steps.length - 1) {
       // Final step - generate AI content and create project
       await handleGenerateContent();
     } else {
-      markStepCompleted(currentStep);
       nextStep();
     }
   };
@@ -84,13 +79,18 @@ export default function WizardScreen() {
   const handleGenerateContent = async () => {
     try {
       setLoading(true);
-      
-      // Create slides from selected images
-      const slides = data.selectedImages.map((uri, index) =>
-        createSlide(`slide_${Date.now()}_${index}`, index, uri, data.presetId)
-      );
 
-      // Create AI request
+      console.log('Selected images:', data.selectedImages);
+
+      // Create slides from selected images with unique IDs
+      const slides = data.selectedImages.map((uri, index) => {
+        const uniqueId = `slide_${Date.now()}_${index}_${Math.random().toString(36).slice(2, 7)}`;
+        return createSlide(uniqueId, index, uri, data.presetId);
+      });
+
+      console.log('Created slides:', slides);
+
+      // Create AI request with selected topic
       const aiRequest = createAIRequest(
         data.category,
         data.goal,
@@ -101,224 +101,235 @@ export default function WizardScreen() {
         data.keyPoints,
         data.presetId,
         data.cta,
-        data.hashtags
+        data.hashtags,
+        data.selectedTopic
       );
 
       // Generate AI content
       const aiResponse = await generateCarousel(aiRequest);
       setResponse(aiResponse);
 
+      console.log('AI Response received:', aiResponse);
+
+      // Calculate number of content slides (total - 2 for cover and CTA)
+      const contentSlidesCount = Math.max(1, slides.length - 2);
+      
       // Update slides with AI content
       const updatedSlides = slides.map((slide, index) => {
         const aiSlide = aiResponse.slides[index];
-        if (aiSlide) {
-          return {
-            ...slide,
-            textTitle: aiSlide.title,
-            textBody: aiSlide.body,
-          };
+        if (!aiSlide) return slide;
+
+        // Clean title: remove numbers and bullet points
+        let cleanTitle = (aiSlide.title || '')
+          .replace(/^\d+\s*[-–•]\s*/, '') // Remove "1 -", "2 -", etc.
+          .replace(/^\d+\.\s*/, '') // Remove "1.", "2.", etc.
+          .replace(/^\•\s*/, '') // Remove bullet points
+          .trim();
+
+        let cleanBody = (aiSlide.body || '').trim();
+        
+        // First slide - Cover
+        if (index === 0) {
+          if (data.selectedTopic) {
+            // Format as "X dicas sobre [topic]"
+            cleanTitle = t('wizard.titles.tipsCount', {
+              count: contentSlidesCount,
+              topic: data.selectedTopic.title,
+              category: data.selectedTopic.category
+            });
+          }
+          // Center the body text for the cover
+          cleanBody = cleanBody.split('\n').map(line => line.trim()).join('\n');
         }
-        return slide;
+        // Last slide - CTA
+        else if (index === slides.length - 1) {
+          cleanTitle = cleanTitle || t('wizard.titles.followForMore');
+          cleanBody = aiResponse.cta || t('wizard.defaults.cta');
+        }
+        // Content slides
+        else {
+          // Format as "Dica X: [Title]" for content slides
+          cleanTitle = cleanTitle || t('wizard.titles.tipNumber', { number: index });
+          
+          // Ensure body has proper line breaks for better readability
+          cleanBody = cleanBody
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0)
+            .join('\n\n');
+        }
+
+        return {
+          ...slide,
+          textTitle: cleanTitle,
+          textBody: cleanBody || t('wizard.defaults.slideBody', { number: index + 1 }),
+        };
       });
 
       // Create project
+      console.log('Final slides with AI content:', updatedSlides);
       createNewProject(updatedSlides, data.language, data.presetId);
-      
+
       // Navigate to preview
       router.push('/preview');
     } catch (error) {
       console.error('Error generating content:', error);
-      setError('Failed to generate content. Please try again.');
-      Alert.alert('Error', 'Failed to generate content. Please try again.');
+      const errorMessage = error instanceof Error && error.message.includes('Network request failed')
+        ? 'Verifique sua conexão com a internet e tente novamente.'
+        : 'Erro ao gerar conteúdo com IA. Verifique sua conexão e API key.';
+
+      setError(errorMessage);
+      Alert.alert('Erro', errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddKeyPoint = () => {
-    if (keyPointText.trim()) {
-      updateStepData({
-        keyPoints: [...data.keyPoints, keyPointText.trim()],
-      });
-      setKeyPointText('');
-    }
-  };
+  // Ensure steps is loaded and currentStep is valid
+  if (!steps.length || currentStep >= steps.length) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#ff3366" />
+        <Text style={styles.loadingText}>{t('wizard.loading') || 'Carregando...'}</Text>
+      </View>
+    );
+  }
 
-  const handleRemoveKeyPoint = (index: number) => {
-    const newKeyPoints = data.keyPoints.filter((_, i) => i !== index);
-    updateStepData({ keyPoints: newKeyPoints });
-  };
-
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 0: // Images
-        return (
-          <ImagePickerGrid
-            selectedImages={data.selectedImages}
-            onImagesChange={(images) => updateStepData({ selectedImages: images })}
-          />
-        );
-
-      case 1: // Content & Goal
-        return (
-          <View style={styles.stepContent}>
-            <Card style={styles.inputCard}>
-              <Text style={styles.inputLabel}>Category</Text>
-              <Segmented
-                options={categories}
-                value={data.category}
-                onValueChange={(value) => updateStepData({ category: value })}
-              />
-            </Card>
-
-            <Card style={styles.inputCard}>
-              <Text style={styles.inputLabel}>Goal</Text>
-              <Segmented
-                options={goals}
-                value={data.goal}
-                onValueChange={(value) => updateStepData({ goal: value })}
-              />
-            </Card>
-
-            <Card style={styles.inputCard}>
-              <Text style={styles.inputLabel}>Target Audience</Text>
-              <TextInput
-                style={styles.textInput}
-                value={data.audience}
-                onChangeText={(text) => updateStepData({ audience: text })}
-                placeholder="e.g., Young professionals, Students, Entrepreneurs"
-              />
-            </Card>
-
-            <Card style={styles.inputCard}>
-              <Text style={styles.inputLabel}>Language</Text>
-              <Segmented
-                options={languages}
-                value={data.language}
-                onValueChange={(value) => updateStepData({ language: value })}
-              />
-            </Card>
-          </View>
-        );
-
-      case 2: // Tone & Style
-        return (
-          <View style={styles.stepContent}>
-            <Card style={styles.inputCard}>
-              <Text style={styles.inputLabel}>Tone</Text>
-              <Segmented
-                options={tones}
-                value={data.tone}
-                onValueChange={(value) => updateStepData({ tone: value })}
-              />
-            </Card>
-
-            <Card style={styles.inputCard}>
-              <Text style={styles.inputLabel}>Style Preset</Text>
-              <Segmented
-                options={getAllPresets().map(preset => ({
-                  label: preset.name,
-                  value: preset.id,
-                }))}
-                value={data.presetId}
-                onValueChange={(value) => updateStepData({ presetId: value as PresetId })}
-              />
-            </Card>
-          </View>
-        );
-
-      case 3: // Key Points
-        return (
-          <View style={styles.stepContent}>
-            <Card style={styles.inputCard}>
-              <Text style={styles.inputLabel}>Key Points</Text>
-              <View style={styles.keyPointInput}>
-                <TextInput
-                  style={styles.textInput}
-                  value={keyPointText}
-                  onChangeText={setKeyPointText}
-                  placeholder="Enter a key point..."
-                  multiline
-                />
-                <Button
-                  title="Add"
-                  onPress={handleAddKeyPoint}
-                  disabled={!keyPointText.trim()}
-                  size="sm"
-                />
-              </View>
-              
-              {data.keyPoints.map((point, index) => (
-                <View key={index} style={styles.keyPointItem}>
-                  <Text style={styles.keyPointText}>{point}</Text>
-                  <TouchableOpacity
-                    onPress={() => handleRemoveKeyPoint(index)}
-                    style={styles.removeButton}
-                  >
-                    <Text style={styles.removeButtonText}>×</Text>
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </Card>
-          </View>
-        );
-
-      case 4: // CTA & Hashtags
-        return (
-          <View style={styles.stepContent}>
-            <Card style={styles.inputCard}>
-              <Text style={styles.inputLabel}>Call to Action (Optional)</Text>
-              <TextInput
-                style={styles.textInput}
-                value={data.cta}
-                onChangeText={(text) => updateStepData({ cta: text })}
-                placeholder="e.g., Follow for more tips, Learn more at..."
-              />
-            </Card>
-
-            <Card style={styles.inputCard}>
-              <Text style={styles.inputLabel}>Hashtags (Optional)</Text>
-              <TextInput
-                style={styles.textInput}
-                value={data.hashtags.join(', ')}
-                onChangeText={(text) => updateStepData({ hashtags: text.split(',').map(t => t.trim()).filter(t => t) })}
-                placeholder="e.g., #marketing, #business, #tips"
-              />
-            </Card>
-          </View>
-        );
-
-      default:
-        return null;
-    }
-  };
+  const currentStepData = steps[currentStep] || {};
 
   return (
     <View style={styles.container}>
-      <WizardStepper
-        steps={steps}
-        currentStep={currentStep}
-        onStepPress={setCurrentStep}
-      />
+      <View style={styles.header}>
+        <Text style={styles.title}>{currentStepData.title || ''}</Text>
+        <Text style={styles.subtitle}>
+          {currentStep === 0 ? t('wizard.category.title') : ''}
+        </Text>
+      </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {renderStepContent()}
+      <ScrollView style={styles.stepContainer}>
+        {currentStep === 0 && (
+          <>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>
+                {t('wizard.category.language')}
+              </Text>
+              <Segmented
+                options={languages}
+                value={data.language}
+                onValueChange={(value) =>
+                  updateStepData({ ...data, language: value as 'en-US' | 'pt-BR' })
+                }
+                style={{ backgroundColor: '#1a1a1a' }}
+                selectedOptionStyle={{ backgroundColor: '#ff3366' }}
+                selectedTextStyle={{ color: '#fff' }}
+                textStyle={{ color: 'rgba(255, 255, 255, 0.7)' }}
+              />
+            </View>
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>
+                {t('wizard.category.selectCategory')}
+              </Text>
+              <Segmented
+                options={categories}
+                value={data.category}
+                onValueChange={(value) =>
+                  updateStepData({ ...data, category: value as string })
+                }
+                style={{ backgroundColor: '#1a1a1a' }}
+                selectedOptionStyle={{ backgroundColor: '#ff3366' }}
+                selectedTextStyle={{ color: '#fff' }}
+                textStyle={{ color: 'rgba(255, 255, 255, 0.7)' }}
+              />
+            </View>
+          </>
+        )}
+
+        {currentStep === 1 && (
+          <TrendingTopicsSelector
+            category={data.category}
+            selectedTopic={data.selectedTopic}
+            onTopicSelect={(topic) => updateStepData({ ...data, selectedTopic: topic })}
+          />
+        )}
+
+        {currentStep === 2 && (
+          <ImagePickerGrid
+            selectedImages={data.selectedImages}
+            onImagesChange={(images) => updateStepData({ ...data, selectedImages: images })}
+          />
+        )}
+
+        {currentStep === 3 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              {t('wizard.style.tone')}
+            </Text>
+            <Segmented
+              options={tones}
+              value={data.tone}
+              onValueChange={(value) =>
+                updateStepData({ ...data, tone: value as string })
+              }
+              style={{ backgroundColor: '#1a1a1a' }}
+              selectedOptionStyle={{ backgroundColor: '#ff3366' }}
+              selectedTextStyle={{ color: '#fff' }}
+              textStyle={{ color: 'rgba(255, 255, 255, 0.7)' }}
+            />
+          </View>
+        )}
+
+        {currentStep === 4 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              {t('wizard.style.style')}
+            </Text>
+            <Segmented
+              options={getAllPresets().map(preset => ({
+                label: preset.name,
+                value: preset.id,
+              }))}
+              value={data.presetId}
+              onValueChange={(value) =>
+                updateStepData({ ...data, presetId: value as PresetId })
+              }
+              style={{ backgroundColor: '#1a1a1a' }}
+              selectedOptionStyle={{ backgroundColor: '#ff3366' }}
+              selectedTextStyle={{ color: '#fff' }}
+              textStyle={{ color: 'rgba(255, 255, 255, 0.7)' }}
+            />
+          </View>
+        )}
       </ScrollView>
 
-      <View style={styles.footer}>
-        <Button
-          title="Previous"
-          variant="outline"
-          onPress={previousStep}
-          disabled={currentStep === 0}
-          style={styles.footerButton}
-        />
-        <Button
-          title={currentStep === steps.length - 1 ? 'Generate & Create' : 'Next'}
+      <View style={styles.buttonContainer}>
+        {currentStep > 0 && (
+          <TouchableOpacity
+            onPress={previousStep}
+            style={[styles.button, styles.secondaryButton]}
+            disabled={aiLoading}
+          >
+            <Text style={[styles.buttonText, styles.secondaryButtonText]}>
+              {t('wizard.buttons.previous')}
+            </Text>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity
           onPress={handleNext}
-          disabled={!canProceed()}
-          style={styles.footerButton}
-        />
+          style={[
+            styles.button,
+            styles.primaryButton,
+            currentStep === 0 && { marginLeft: 'auto' },
+          ]}
+          disabled={aiLoading}
+        >
+          <Text style={[styles.buttonText, styles.primaryButtonText]}>
+            {currentStep === steps.length - 1
+              ? t('wizard.buttons.generate')
+              : t('wizard.buttons.next')}
+          </Text>
+          {aiLoading && <ActivityIndicator color="#fff" style={{ marginLeft: 8 }} />}
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -327,74 +338,175 @@ export default function WizardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.light.background,
+    backgroundColor: '#0f0f0f',
   },
-  content: {
-    flex: 1,
-    padding: spacing.md,
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0f0f0f',
   },
-  stepContent: {
-    gap: spacing.lg,
-  },
-  inputCard: {
-    padding: spacing.lg,
-  },
-  inputLabel: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-    color: colors.light.text,
-    marginBottom: spacing.md,
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: colors.light.border,
-    borderRadius: 8,
-    padding: spacing.md,
-    fontSize: typography.sizes.md,
+  loadingText: {
+    color: '#fff',
+    fontSize: 18,
+    marginTop: 16,
     fontFamily: typography.fontFamily,
-    color: colors.light.text,
-    backgroundColor: colors.light.background,
+  },
+  header: {
+    paddingTop: 52,
+    paddingBottom: 20,
+    paddingHorizontal: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: '#0f0f0f',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 8,
+    lineHeight: 34,
+    letterSpacing: -0.3,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.7)',
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  stepContainer: {
+    flex: 1,
+    padding: 20,
+    paddingBottom: 100, // Espaço extra para o botão flutuante
+  },
+  section: {
+    marginBottom: 24,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  sectionTitle: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  buttonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    padding: 16,
+    paddingBottom: 24,
+    backgroundColor: '#0f0f0f',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  button: {
+    flex: 1,
+    height: 52,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 20,
+    letterSpacing: 0.2,
+  },
+  secondaryButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.15)',
+    marginRight: 12,
+  },
+  primaryButton: {
+    backgroundColor: '#ff3366',
+    shadowColor: '#ff3366',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  secondaryButtonText: {
+    color: 'rgba(255,255,255,0.9)',
+  },
+  primaryButtonText: {
+    color: '#fff',
+    fontWeight: '700',
   },
   keyPointInput: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
+    gap: spacing.md,
+    marginBottom: spacing.lg,
   },
   keyPointItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: spacing.sm,
+    padding: spacing.md,
     backgroundColor: colors.light.surface,
-    borderRadius: 8,
-    marginBottom: spacing.xs,
+    borderRadius: 12,
+    marginBottom: spacing.sm,
   },
   keyPointText: {
     flex: 1,
-    fontSize: typography.sizes.sm,
-    color: colors.light.text,
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: typography.weights.regular,
+    lineHeight: 21,
   },
   removeButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: colors.light.error,
     alignItems: 'center',
     justifyContent: 'center',
   },
   removeButtonText: {
     color: colors.light.text,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: typography.weights.bold,
   },
   footer: {
     flexDirection: 'row',
     padding: spacing.md,
-    gap: spacing.md,
+    gap: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: colors.light.border,
+    backgroundColor: colors.light.background,
+    minHeight: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   footerButton: {
+    height: 48,
+    borderRadius: 12,
+    minWidth: 120,
+  },
+  previousButton: {
+    flex: 0,
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: colors.light.border,
+  },
+  nextButton: {
     flex: 1,
+    backgroundColor: colors.light.primary,
+  },
+  fullWidthButton: {
+    flex: 1,
+    backgroundColor: colors.light.primary,
   },
 });

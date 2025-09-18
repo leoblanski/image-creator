@@ -1,4 +1,4 @@
-import { getExportDirectory, saveSlideImage, shareImage } from '@src/core/export';
+import { saveSlideImage, shareImage } from '@src/core/export';
 import { colors, spacing, typography } from '@src/core/theme';
 import { SlideCanvas } from '@src/features/project/components/SlideCanvas';
 import { useProjectStore } from '@src/features/project/store';
@@ -7,11 +7,11 @@ import { Card } from '@src/shared/ui/Card';
 import { router } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import ViewShot from 'react-native-view-shot';
 
@@ -65,7 +65,7 @@ export default function ExportScreen() {
       setExportedFiles(files);
       Alert.alert(
         'Export Complete',
-        `Successfully exported ${files.length} slides to ${getExportDirectory()}`,
+        `Successfully exported ${files.length} slides to Photos`,
         [{ text: 'OK' }]
       );
     } catch (error) {
@@ -98,7 +98,6 @@ export default function ExportScreen() {
 
   const renderSlide = (slide: any, index: number) => (
     <View key={slide.id} style={styles.slideContainer}>
-      <Text style={styles.slideTitle}>Slide {index + 1}</Text>
       <ViewShot
         ref={(ref) => {
           viewShotRefs.current[index] = ref;
@@ -107,13 +106,14 @@ export default function ExportScreen() {
           format: 'png',
           quality: 1,
           width: 1080,
-          height: 1350,
+          height: 1080,
         }}
       >
         <SlideCanvas
           slide={slide}
           isPreview={false}
           showSafeArea={false}
+          language={currentProject.language}
         />
       </ViewShot>
     </View>
@@ -179,9 +179,7 @@ export default function ExportScreen() {
           <Text style={styles.successText}>
             {exportedFiles.length} slides exported successfully
           </Text>
-          <Text style={styles.successPath}>
-            Saved to: {getExportDirectory()}
-          </Text>
+          <Text style={styles.successPath}>Saved to Photos</Text>
         </Card>
       )}
     </View>

@@ -1,11 +1,11 @@
 import React from 'react';
 import {
-    StyleSheet,
-    Text,
-    TextStyle,
-    TouchableOpacity,
-    View,
-    ViewStyle,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from 'react-native';
 import { borderRadius, colors, spacing, typography } from '../../core/theme';
 
@@ -71,18 +71,18 @@ export function Segmented<T>({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     backgroundColor: colors.light.surface,
     borderRadius: borderRadius.md,
     padding: 2,
   },
   option: {
-    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   selectedOption: {
     backgroundColor: colors.light.background,
@@ -94,9 +94,10 @@ const styles = StyleSheet.create({
   },
   text: {
     fontFamily: typography.fontFamily,
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.regular,
     color: colors.light.textSecondary,
+    textAlign: 'center',
   },
   selectedText: {
     color: colors.light.text,

@@ -77,8 +77,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xl,
+    backgroundColor: colors.light.background,
   },
   step: {
     flex: 1,
@@ -92,18 +93,18 @@ const styles = StyleSheet.create({
     // Completed step styling
   },
   disabledStep: {
-    opacity: 0.5,
+    opacity: 0.4,
   },
   stepIndicator: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: colors.light.surface,
     borderWidth: 2,
     borderColor: colors.light.border,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   activeIndicator: {
     backgroundColor: colors.light.primary,
@@ -114,8 +115,8 @@ const styles = StyleSheet.create({
     borderColor: colors.light.success,
   },
   stepNumber: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
     color: colors.light.textSecondary,
   },
   activeStepNumber: {
@@ -125,14 +126,14 @@ const styles = StyleSheet.create({
     color: colors.light.text,
   },
   stepTitle: {
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes.sm,
     fontWeight: typography.weights.medium,
     color: colors.light.textSecondary,
     textAlign: 'center',
   },
   activeStepTitle: {
     color: colors.light.primary,
-    fontWeight: typography.weights.semibold,
+    fontWeight: typography.weights.bold,
   },
   completedStepTitle: {
     color: colors.light.success,

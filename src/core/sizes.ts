@@ -1,6 +1,6 @@
-// Instagram carousel dimensions
+// Instagram carousel dimensions (1080x1080 is the standard square format)
 export const CAROUSEL_WIDTH = 1080;
-export const CAROUSEL_HEIGHT = 1350;
+export const CAROUSEL_HEIGHT = 1080;
 
 // Preview dimensions (scaled down for mobile)
 export const PREVIEW_WIDTH = CAROUSEL_WIDTH / 3;

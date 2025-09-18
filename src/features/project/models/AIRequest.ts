@@ -1,4 +1,5 @@
 import { PresetId } from '../../../core/presets';
+import { TrendingTopic } from '../trendingService';
 
 export type AIRequest = {
   category: string;
@@ -11,6 +12,7 @@ export type AIRequest = {
   cta?: string;
   hashtags?: string[];
   presetId: PresetId;
+  selectedTopic?: TrendingTopic | null;
 };
 
 export const createAIRequest = (
@@ -23,7 +25,8 @@ export const createAIRequest = (
   keyPoints: string[],
   presetId: PresetId = 'classic_black',
   cta?: string,
-  hashtags?: string[]
+  hashtags?: string[],
+  selectedTopic?: TrendingTopic | null
 ): AIRequest => ({
   category,
   goal,
@@ -35,4 +38,5 @@ export const createAIRequest = (
   presetId,
   cta,
   hashtags,
+  selectedTopic,
 });

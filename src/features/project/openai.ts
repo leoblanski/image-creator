@@ -1,10 +1,10 @@
 import Constants from 'expo-constants';
 import { AIRequest } from './models/AIRequest';
-import { AIResponse, createFallbackResponse, validateAIResponse } from './models/AIResponse';
+import { AIResponse, validateAIResponse } from './models/AIResponse';
 import { buildFullPrompt } from './prompt';
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-const MODEL = 'gpt-4o-mini';
+const MODEL = 'gpt-4o';
 
 export const generateCarousel = async (request: AIRequest): Promise<AIResponse> => {
   const apiKey = Constants.expoConfig?.extra?.OPENAI_API_KEY;
@@ -25,8 +25,8 @@ export const generateCarousel = async (request: AIRequest): Promise<AIResponse> 
       body: JSON.stringify({
         model: MODEL,
         response_format: { type: 'json_object' },
-        temperature: 0.7,
-        max_tokens: 1000,
+        temperature: 0.8,
+        max_tokens: 1500,
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: user },
@@ -66,10 +66,9 @@ export const generateCarousel = async (request: AIRequest): Promise<AIResponse> 
         }));
       }
       
-      // If we still can't validate, use fallback
+      // If we still can't validate, throw error
       if (!validateAIResponse(parsedContent)) {
-        console.log('Using fallback response due to validation failure');
-        return createFallbackResponse(request.slidesCount);
+        throw new Error('Invalid AI response format received');
       }
     }
 
@@ -78,12 +77,13 @@ export const generateCarousel = async (request: AIRequest): Promise<AIResponse> 
       console.warn(`Expected ${request.slidesCount} slides, got ${parsedContent.slides.length}`);
       // Adjust the response to match expected count
       if (parsedContent.slides.length < request.slidesCount) {
-        // Add placeholder slides
+        // Extend with additional engaging slides
         for (let i = parsedContent.slides.length; i < request.slidesCount; i++) {
+          const tipNumber = i - 1; // First slide is hook, so tips start from 0
           parsedContent.slides.push({
             index: i + 1,
-            title: `Slide ${i + 1}`,
-            body: i === 0 ? 'Engaging content' : undefined,
+            title: `Dica ${tipNumber + 1}`,
+            body: `Conteúdo valioso da dica ${tipNumber + 1}`,
           });
         }
       } else {
@@ -97,8 +97,8 @@ export const generateCarousel = async (request: AIRequest): Promise<AIResponse> 
   } catch (error) {
     console.error('OpenAI API error:', error);
     
-    // Return fallback response on error
-    return createFallbackResponse(request.slidesCount);
+    // Re-throw the error to handle in the UI
+    throw error;
   }
 };
 

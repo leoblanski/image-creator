@@ -1,10 +1,9 @@
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
-    StyleSheet,
-    Text,
-    View
+  StyleSheet,
+  Text,
+  View
 } from 'react-native';
 import ViewShot from 'react-native-view-shot';
 import { getPreset } from '../../../core/presets';
@@ -17,6 +16,7 @@ interface SlideCanvasProps {
   showSafeArea?: boolean;
   isPreview?: boolean;
   viewShotRef?: React.RefObject<ViewShot>;
+  language?: 'pt-BR' | 'en-US';
 }
 
 export const SlideCanvas: React.FC<SlideCanvasProps> = ({
@@ -24,101 +24,108 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
   showSafeArea = false,
   isPreview = true,
   viewShotRef,
+  language = 'en-US',
 }) => {
   const preset = getPreset(slide.styleId);
   const { textTitle, textBody, backgroundUri } = slide;
 
-  const canvasWidth = isPreview ? PREVIEW_WIDTH : CAROUSEL_WIDTH;
-  const canvasHeight = isPreview ? PREVIEW_HEIGHT : CAROUSEL_HEIGHT;
+  console.log('SlideCanvas render:', {
+    slideId: slide.id,
+    backgroundUri,
+    textTitle,
+    textBody,
+    styleId: slide.styleId,
+    isPreview
+  });
 
-  const scale = isPreview ? 1/3 : 1;
+  // Use full size for both preview and final output to ensure consistency
+  const canvasSize = Math.min(CAROUSEL_WIDTH, CAROUSEL_HEIGHT);
+  const scale = 1;
 
   const renderOverlay = () => {
-    if (preset.overlay.type === 'gradient' && preset.overlay.gradient) {
-      return (
-        <LinearGradient
-          colors={preset.overlay.gradient.colors}
-          start={preset.overlay.gradient.start}
-          end={preset.overlay.gradient.end}
-          style={[
-            styles.overlay,
-            { opacity: preset.overlay.opacity },
-          ]}
-        />
-      );
-    } else {
-      return (
-        <View
-          style={[
-            styles.overlay,
-            {
-              backgroundColor: preset.overlay.color,
-              opacity: preset.overlay.opacity,
-            },
-          ]}
-        />
-      );
-    }
+    // Enhanced dark overlay for better text readability
+    return (
+      <View
+        style={[
+          styles.overlay,
+          {
+            backgroundColor: '#000000',
+            opacity: 0.5, // Increased opacity for better text visibility
+          },
+        ]}
+      />
+    );
   };
 
   const renderTextContent = () => {
-    const titleStyle = {
-      ...preset.titleStyle,
-      fontSize: preset.titleStyle.fontSize * scale,
-      position: {
-        top: preset.titleStyle.position.top * scale,
-        left: preset.titleStyle.position.left * scale,
-        right: preset.titleStyle.position.right * scale,
-      },
-    };
+    const formatTitleForInstagram = (text?: string): string | undefined => {
+      if (!text) return text;
 
-    const bodyStyle = {
-      ...preset.bodyStyle,
-      fontSize: preset.bodyStyle.fontSize * scale,
-      position: {
-        top: preset.bodyStyle.position.top * scale,
-        left: preset.bodyStyle.position.left * scale,
-        right: preset.bodyStyle.position.right * scale,
-      },
+      // Professional line breaking for Instagram carousels
+      const words = text.split(' ');
+
+      if (words.length <= 4) {
+        return text; // Keep short titles on one line
+      }
+
+      // Smart breaking: aim for 2-3 lines max, balanced word distribution
+      if (words.length <= 8) {
+        // Split roughly in half
+        const mid = Math.ceil(words.length / 2);
+        const firstLine = words.slice(0, mid).join(' ');
+        const secondLine = words.slice(mid).join(' ');
+        return `${firstLine}\n${secondLine}`;
+      } else {
+        // For longer titles, try 3 lines
+        const wordsPerLine = Math.ceil(words.length / 3);
+        const lines = [];
+        for (let i = 0; i < words.length; i += wordsPerLine) {
+          lines.push(words.slice(i, i + wordsPerLine).join(' '));
+        }
+        return lines.slice(0, 3).join('\n');
+      }
     };
 
     return (
-      <View style={styles.textContainer}>
-        {textTitle && (
-          <Text style={[styles.title, titleStyle]}>
-            {textTitle}
-          </Text>
-        )}
-        {textBody && (
-          <Text style={[styles.body, bodyStyle]}>
-            {textBody}
-          </Text>
-        )}
+      <View style={[
+        styles.textContainer,
+        {
+          paddingHorizontal: 40 * scale,
+          justifyContent: 'center',
+          alignItems: 'center',
+          paddingTop: canvasSize * 0.15, // 15% from top
+          paddingBottom: canvasSize * 0.15, // 15% from bottom
+        }
+      ]}>
+        <View style={styles.titleContainer}>
+          {textTitle && (
+            <Text style={[
+              styles.title,
+              {
+                fontSize: 30 * scale,
+                fontWeight: '800',
+                color: '#FFFFFF',
+                textAlign: 'center',
+                lineHeight: 36 * scale,
+                textShadowColor: 'rgba(0, 0, 0, 0.8)',
+                textShadowOffset: { width: 1, height: 1 },
+                textShadowRadius: 8,
+                letterSpacing: -0.5 * scale,
+                padding: 8 * scale,
+              }
+            ]}
+              numberOfLines={4}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              {formatTitleForInstagram(textTitle)}
+            </Text>
+          )}
+        </View>
       </View>
     );
   };
 
-  const renderBackgroundCard = () => {
-    if (!preset.backgroundCard) return null;
-
-    const cardStyle = {
-      ...preset.backgroundCard,
-      position: {
-        top: preset.backgroundCard.position.top * scale,
-        left: preset.backgroundCard.position.left * scale,
-        right: preset.backgroundCard.position.right * scale,
-        bottom: preset.backgroundCard.position.bottom * scale,
-      },
-      padding: preset.backgroundCard.padding * scale,
-      borderRadius: preset.backgroundCard.borderRadius * scale,
-    };
-
-    return (
-      <View style={[styles.backgroundCard, cardStyle]}>
-        {renderTextContent()}
-      </View>
-    );
-  };
 
   const renderSafeArea = () => {
     if (!showSafeArea) return null;
@@ -126,9 +133,9 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
     return (
       <View style={styles.safeArea}>
         <View style={styles.safeAreaLine} />
-        <View style={[styles.safeAreaLine, { top: canvasHeight - 20 }]} />
-        <View style={[styles.safeAreaLine, { width: 1, height: canvasHeight, top: 0, left: 20 }]} />
-        <View style={[styles.safeAreaLine, { width: 1, height: canvasHeight, top: 0, right: 20 }]} />
+        <View style={[styles.safeAreaLine, { top: canvasSize - 20 }]} />
+        <View style={[styles.safeAreaLine, { width: 1, height: canvasSize, top: 0, left: 20 }]} />
+        <View style={[styles.safeAreaLine, { width: 1, height: canvasSize, top: 0, right: 20 }]} />
       </View>
     );
   };
@@ -145,21 +152,59 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
       style={[
         styles.canvas,
         {
-          width: canvasWidth,
-          height: canvasHeight,
+          width: isPreview ? PREVIEW_WIDTH : canvasSize,
+          height: isPreview ? PREVIEW_HEIGHT : canvasSize,
+          aspectRatio: 1, // Ensure 1:1 aspect ratio
+          transform: isPreview ? [{ scale: 1 / 3 }] : [],
+          transformOrigin: 'top left',
         },
       ]}
     >
-      <Image
-        source={{ uri: backgroundUri }}
-        style={styles.backgroundImage}
-        contentFit="cover"
-      />
-      
+      {backgroundUri ? (
+        <Image
+          source={{ uri: backgroundUri }}
+          style={styles.backgroundImage}
+          contentFit="cover"
+        />
+      ) : (
+        <View style={[styles.backgroundImage, { backgroundColor: colors.light.surface }]} />
+      )}
+
       {renderOverlay()}
-      
-      {preset.backgroundCard ? renderBackgroundCard() : renderTextContent()}
-      
+      {/* First slide navigation hint */}
+      {slide.index === 0 && (
+        <View
+          style={{
+            position: 'absolute',
+            bottom: canvasSize * 0.2, // 20% padding bottom
+            left: 0,
+            right: 0,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              paddingHorizontal: 24 * scale,
+              paddingVertical: 8 * scale,
+              borderRadius: 20 * scale,
+            }}
+          >
+            <Text
+              style={{
+                color: '#FFFFFF',
+                fontSize: 16 * scale,
+                fontWeight: '600',
+                letterSpacing: 0.5 * scale,
+              }}
+            >
+              {language === 'pt-BR' ? 'Deslize para ver mais →' : 'Swipe for more →'}
+            </Text>
+          </View>
+        </View>
+      )}
+      {renderTextContent()}
       {renderSafeArea()}
     </ViewShot>
   );
@@ -193,14 +238,13 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   title: {
-    position: 'absolute',
     fontWeight: '900',
+    textAlign: 'center',
   },
-  body: {
-    position: 'absolute',
-  },
-  backgroundCard: {
-    position: 'absolute',
+  titleContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
   },
   safeArea: {
     position: 'absolute',

@@ -1,12 +1,14 @@
+import * as Clipboard from 'expo-clipboard';
 import React, { useState } from 'react';
 import {
-    Dimensions,
-    FlatList,
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Dimensions,
+  FlatList,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { PresetId } from '../../../core/presets';
 import { borderRadius, colors, spacing, typography } from '../../../core/theme';
@@ -18,6 +20,7 @@ interface PreviewPagerProps {
   slides: Slide[];
   onSlideUpdate: (slideId: string, updatedSlide: Slide) => void;
   showSafeArea?: boolean;
+  language?: 'pt-BR' | 'en-US';
 }
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -27,6 +30,7 @@ export const PreviewPager: React.FC<PreviewPagerProps> = ({
   slides,
   onSlideUpdate,
   showSafeArea = false,
+  language = 'en-US',
 }) => {
   const [selectedSlideIndex, setSelectedSlideIndex] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
@@ -60,6 +64,19 @@ export const PreviewPager: React.FC<PreviewPagerProps> = ({
     setEditingSlide(null);
   };
 
+  const handleCopyDescription = async () => {
+    const description = slides
+      .map((slide, index) => {
+        const title = slide.textTitle || `Slide ${index + 1}`;
+        const body = slide.textBody || '';
+        return body ? `${title}\n\n${body}` : title;
+      })
+      .join('\n\n---\n\n');
+    
+    await Clipboard.setStringAsync(description);
+    Alert.alert('Copied!', 'Description copied to clipboard');
+  };
+
   const renderThumbnail = ({ item, index }: { item: Slide; index: number }) => (
     <TouchableOpacity
       style={[
@@ -73,10 +90,8 @@ export const PreviewPager: React.FC<PreviewPagerProps> = ({
         slide={item}
         isPreview={true}
         showSafeArea={false}
+        language={language}
       />
-      <View style={styles.thumbnailOverlay}>
-        <Text style={styles.slideNumber}>{index + 1}</Text>
-      </View>
     </TouchableOpacity>
   );
 
@@ -89,6 +104,7 @@ export const PreviewPager: React.FC<PreviewPagerProps> = ({
           slide={selectedSlide}
           isPreview={false}
           showSafeArea={showSafeArea}
+          language={language}
         />
         <TouchableOpacity
           style={styles.editButton}
@@ -122,6 +138,15 @@ export const PreviewPager: React.FC<PreviewPagerProps> = ({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.thumbnailsList}
         />
+      </View>
+
+      <View style={styles.copyButtonContainer}>
+        <TouchableOpacity
+          style={styles.copyButton}
+          onPress={handleCopyDescription}
+        >
+          <Text style={styles.copyButtonText}>📋 Copy Description</Text>
+        </TouchableOpacity>
       </View>
 
       <Modal
@@ -204,20 +229,22 @@ const styles = StyleSheet.create({
   selectedThumbnail: {
     borderColor: colors.light.primary,
   },
-  thumbnailOverlay: {
-    position: 'absolute',
-    top: 4,
-    left: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+  
+  copyButtonContainer: {
+    padding: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.light.border,
   },
-  slideNumber: {
+  copyButton: {
+    backgroundColor: colors.light.primary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+  },
+  copyButtonText: {
     color: colors.light.text,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
   },
 });
